@@ -1,0 +1,6 @@
+{
+  "name": "Màquina de Turing - Unitat Educativa i Joc de Deducció",
+  "description": "Unitat educativa sobre Alan Turing, la història de la computació i joc de lògica deductiva basat en la Màquina de Turing amb targetes perforades i verificadors mecànics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
