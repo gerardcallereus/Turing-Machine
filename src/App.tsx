@@ -28,7 +28,7 @@ import {
   Lock,
   CheckCircle2,
   Feather,
-  Key,
+  User,
 } from 'lucide-react';
 
 const INITIAL_PROPOSAL: Code = {
@@ -51,8 +51,37 @@ export default function App() {
   // Strictly sequential progression:
   // Phase 1 ('education') -> unlocks Phase 2 ('guided') -> unlocks Phase 3 ('game')
   const [currentView, setCurrentView] = useState<'education' | 'guided' | 'game'>('education');
-  const [phase1Completed, setPhase1Completed] = useState<boolean>(false);
-  const [phase2Completed, setPhase2Completed] = useState<boolean>(false);
+  const [playerName, setPlayerName] = useState<string>(() => {
+    return localStorage.getItem('turing_player_name') || '';
+  });
+
+  const isTeacherMode = playerName.trim().toLowerCase() === 'teacher';
+
+  const [phase1Completed, setPhase1Completed] = useState<boolean>(() => {
+    const saved = localStorage.getItem('turing_player_name') || '';
+    return saved.trim().toLowerCase() === 'teacher';
+  });
+  const [phase2Completed, setPhase2Completed] = useState<boolean>(() => {
+    const saved = localStorage.getItem('turing_player_name') || '';
+    return saved.trim().toLowerCase() === 'teacher';
+  });
+
+  const handlePlayerNameChange = (newName: string) => {
+    setPlayerName(newName);
+    localStorage.setItem('turing_player_name', newName);
+    if (newName.trim().toLowerCase() === 'teacher') {
+      sound.playPunch();
+      setPhase1Completed(true);
+      setPhase2Completed(true);
+    }
+  };
+
+  useEffect(() => {
+    if (playerName.trim().toLowerCase() === 'teacher') {
+      setPhase1Completed(true);
+      setPhase2Completed(true);
+    }
+  }, [playerName]);
 
   const [puzzle, setPuzzle] = useState<Puzzle>(PRESET_PUZZLES[0]);
   const [proposal, setProposal] = useState<Code>(INITIAL_PROPOSAL);
@@ -266,22 +295,24 @@ export default function App() {
               </button>
             )}
 
-            {/* Discreet Teacher Key to toggle unlock all phases for classroom review */}
-            {(!phase1Completed || !phase2Completed) && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playPunch();
-                  setPhase1Completed(true);
-                  setPhase2Completed(true);
-                }}
-                className="flex items-center gap-1 rounded-lg border border-[#a89276] bg-[#faf6ee] px-2.5 py-1.5 font-typewriter text-[10px] font-bold text-[#5c4f42] hover:text-[#261f19] transition-all cursor-pointer"
-                title="Accés Docent: Desbloquejar totes les fases directament"
-              >
-                <Key className="h-3 w-3 text-[#b87314]" />
-                <span className="hidden xl:inline">Accés Docent</span>
-              </button>
-            )}
+            {/* Agent / Player Badge in Header */}
+            <div className="flex items-center gap-1.5 rounded-lg border border-[#a89276] bg-[#faf6ee] px-2.5 py-1 font-typewriter text-xs text-[#5c4f42]">
+              <User className="h-3.5 w-3.5 text-[#234b7a]" />
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => handlePlayerNameChange(e.target.value)}
+                placeholder="Agent..."
+                title="Nom de l'agent (escriu 'teacher' per activar el mode professor)"
+                aria-label="Nom de l'agent"
+                className="bg-transparent border-none outline-none text-xs font-typewriter font-semibold text-[#261f19] w-16 sm:w-24 placeholder:text-[#a89276]"
+              />
+              {isTeacherMode && (
+                <span className="rounded bg-[#b87314] px-1.5 py-0.5 font-typewriter text-[10px] font-bold text-[#faf6ee] uppercase tracking-wider">
+                  DOCENT
+                </span>
+              )}
+            </div>
 
             <button
               type="button"
@@ -319,6 +350,9 @@ export default function App() {
               setCurrentView('guided');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
+            playerName={playerName}
+            onPlayerNameChange={handlePlayerNameChange}
+            isTeacherMode={isTeacherMode}
           />
         )}
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   XCircle,
@@ -9,6 +9,7 @@ import {
   Compass,
   RotateCcw,
   Layers,
+  User,
 } from 'lucide-react';
 import { sound } from '../lib/sound';
 import { PUNCH_MATRIX, MATRIX_COLS } from '../lib/punchMatrix';
@@ -17,16 +18,28 @@ import confetti from 'canvas-confetti';
 interface EducationalUnitProps {
   isPhase1Completed: boolean;
   onCompletePhase1: () => void;
+  playerName: string;
+  onPlayerNameChange: (name: string) => void;
+  isTeacherMode: boolean;
 }
 
 export const EducationalUnit: React.FC<EducationalUnitProps> = ({
   isPhase1Completed,
   onCompletePhase1,
+  playerName,
+  onPlayerNameChange,
+  isTeacherMode,
 }) => {
   const [currentChapter, setCurrentChapter] = useState<number>(1);
   const [unlockedChapters, setUnlockedChapters] = useState<number[]>(
-    isPhase1Completed ? [1, 2, 3, 4, 5] : [1]
+    isPhase1Completed || isTeacherMode ? [1, 2, 3, 4, 5] : [1]
   );
+
+  useEffect(() => {
+    if (isTeacherMode) {
+      setUnlockedChapters([1, 2, 3, 4, 5]);
+    }
+  }, [isTeacherMode]);
 
   // Interactive visual layer demo state for Chapter IV (1 = 1 card, 2 = 2 cards, 3 = 3 cards, 4 = on Verificador)
   const [demoLayerStep, setDemoLayerStep] = useState<1 | 2 | 3 | 4>(3);
@@ -211,13 +224,54 @@ export const EducationalUnit: React.FC<EducationalUnitProps> = ({
             <div className="text-xs text-[#463a2e] leading-snug">
               Llegeix els <strong>4 capítols curts</strong> en ordre i respon les <strong>5 preguntes finals</strong> per desbloquejar el Tutorial del Joc.
             </div>
-            {isPhase1Completed && (
+            {isTeacherMode && (
+              <div className="flex items-center gap-1.5 text-xs font-typewriter font-bold text-[#7a4805] bg-[#fbf5e6] px-2.5 py-1 rounded border border-[#b87314]">
+                <span>★ MODE PROFESSOR ACTIVAT</span>
+              </div>
+            )}
+            {isPhase1Completed && !isTeacherMode && (
               <div className="flex items-center gap-1.5 text-xs font-typewriter font-bold text-[#2f5941] bg-[#d8e8de] px-2.5 py-1 rounded border border-[#6e9980]">
                 <CheckCircle2 className="h-4 w-4" />
                 <span>FASE 1 COMPLETADA</span>
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Fitxa d'Identificació de l'Agent a l'inici del joc */}
+      <div className="wc-paper rounded-xl p-4 sm:p-5 border border-[#a89276] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full border border-[#8c765c] bg-[#e8dcce] flex items-center justify-center shrink-0">
+            <User className="h-5 w-5 text-[#234b7a]" />
+          </div>
+          <div>
+            <div className="font-typewriter text-xs font-bold text-[#261f19] tracking-wider uppercase flex items-center gap-2">
+              <span>Fitxa de l'Operador</span>
+              <span className="text-[10px] text-[#7a6b5c] font-normal">&bull; Bletchley Park 1941</span>
+            </div>
+            <p className="text-xs text-[#5c4f42]">
+              Escriu el teu nom per signar els informes de desxiframent i iniciar la missió.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => onPlayerNameChange(e.target.value)}
+              placeholder="Escriu el teu nom..."
+              className="w-full rounded-md border border-[#8c765c] bg-[#faf6ee] px-3 py-1.5 font-typewriter text-sm font-semibold text-[#261f19] placeholder:text-[#a89276] focus:border-[#234b7a] focus:ring-1 focus:ring-[#234b7a] focus:outline-none transition-all"
+            />
+          </div>
+          {isTeacherMode && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#fbf5e6] border border-[#b87314] text-[#7a4805] font-typewriter text-xs font-bold shadow-2xs">
+              <span className="text-[#b87314]">★</span>
+              <span>MODE PROFESSOR (TOTS ELS ACCESOS OBERTS)</span>
+            </div>
+          )}
         </div>
       </div>
 
