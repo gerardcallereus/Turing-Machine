@@ -3,7 +3,7 @@ import { CriterionCard, Code } from '../types/game';
 export const CRITERIA_CARDS: Record<number, CriterionCard> = {
   1: {
     id: 1,
-    title: 'Comparar ▲ amb el número 1',
+    title: 'Comparar ▲ amb 1',
     category: 'value',
     description: 'Mira si el Triangle Blau (▲) és 1 o és més gran que 1.',
     options: [
@@ -23,7 +23,7 @@ export const CRITERIA_CARDS: Record<number, CriterionCard> = {
   },
   2: {
     id: 2,
-    title: 'Comparar ▲ amb el número 3',
+    title: 'Comparar ▲ amb 3',
     category: 'value',
     description: 'Compara el Triangle Blau (▲) amb el 3.',
     options: [
@@ -49,7 +49,7 @@ export const CRITERIA_CARDS: Record<number, CriterionCard> = {
   },
   3: {
     id: 3,
-    title: 'Comparar ■ amb el número 3',
+    title: 'Comparar ■ amb 3',
     category: 'value',
     description: 'Compara el Quadrat Groc (■) amb el 3.',
     options: [
@@ -75,7 +75,7 @@ export const CRITERIA_CARDS: Record<number, CriterionCard> = {
   },
   4: {
     id: 4,
-    title: 'Comparar ● amb el número 3',
+    title: 'Comparar ● amb 3',
     category: 'value',
     description: 'Compara el Cercle Morat (●) amb el 3.',
     options: [

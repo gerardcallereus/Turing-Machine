@@ -108,16 +108,16 @@ export const VerifierCard: React.FC<VerifierCardProps> = ({
       }`}
     >
       {/* Compact Header: Letter + Title + Quick Test Button or Result Stamp */}
-      <div className="flex items-center justify-between gap-2 border-b border-[#cbbba2] bg-[#efe5d2] px-3.5 py-2.5">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-center justify-between gap-2.5 border-b border-[#cbbba2] bg-[#efe5d2] px-3.5 py-2.5">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2f5941] font-typewriter text-base font-bold text-[#faf6ee] shadow-xs border border-[#1e402f]">
             {verifier.letter}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="text-[10px] font-typewriter uppercase tracking-wider text-[#5c4f42] font-bold">
               Verificador {verifier.letter}
             </div>
-            <h3 className="font-display text-sm sm:text-base font-bold text-[#261f19] leading-tight truncate">
+            <h3 className="font-display text-sm sm:text-base font-bold text-[#261f19] leading-snug break-words">
               {card.title}
             </h3>
           </div>
