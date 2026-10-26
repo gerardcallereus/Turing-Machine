@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, HelpCircle, ArrowRight, KeyRound, History } from 'lucide-react';
+import { HelpCircle, ArrowRight, KeyRound, History } from 'lucide-react';
 import { sound } from '../lib/sound';
 
 interface RoundControlProps {
@@ -20,93 +20,66 @@ export const RoundControl: React.FC<RoundControlProps> = ({
   currentRound,
   testsThisRound,
   totalQueries,
-  parQueries,
-  parRounds,
   onNextRound,
   onOpenGuessModal,
   onOpenTutorial,
   onOpenHistory,
-  isMuted,
-  onToggleSound,
 }) => {
   return (
-    <div className="wc-paper-aged flex flex-wrap items-center justify-between gap-4 rounded-xl p-4">
-      {/* Left: Round & Benchmark Stats */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-3 bg-[#faf6ee] px-4 py-2 rounded-lg border border-[#a89276]">
-          <div className="flex h-8 w-8 items-center justify-center rounded bg-[#234b7a] text-[#faf6ee] font-typewriter font-bold text-sm">
+    <div className="wc-paper-aged flex flex-wrap items-center justify-between gap-2.5 rounded-xl px-4 py-2.5 border border-[#a89276]">
+      {/* Left: Compact Round & Test Counter */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2 bg-[#faf6ee] px-3 py-1.5 rounded-lg border border-[#a89276]">
+          <span className="flex h-6 w-6 items-center justify-center rounded bg-[#234b7a] text-[#faf6ee] font-typewriter font-bold text-xs">
             R{currentRound}
-          </div>
-          <div>
-            <div className="text-[10px] font-typewriter uppercase tracking-wider text-[#5c4f42]">
-              Ronda {currentRound} (Sense límit de rondes)
-            </div>
-            <div className="text-xs font-bold text-[#261f19]">
-              Proves d'aquesta ronda:{' '}
-              <span className="font-typewriter text-[#234b7a]">
-                {testsThisRound} / 3
-              </span>
-            </div>
+          </span>
+          <div className="text-xs font-bold text-[#261f19]">
+            Ronda {currentRound} &bull;{' '}
+            <span className="font-typewriter text-[#234b7a]">
+              {testsThisRound}/3 proves fetes
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-[#faf6ee] px-4 py-2 rounded-lg border border-[#a89276]">
-          <div>
-            <div className="text-[10px] font-typewriter uppercase tracking-wider text-[#5c4f42]">
-              Proves Totals Acumulades
-            </div>
-            <div className="text-xs font-bold text-[#261f19] flex items-center gap-2">
-              <span className="font-typewriter text-[#2f5941]">{totalQueries}</span>
-              <span className="text-[#7b6855] text-[11px] font-normal">
-                (Rècord màquina: {parQueries} proves en {parRounds} rondes)
-              </span>
-            </div>
-          </div>
+        <div className="hidden sm:flex items-center gap-1.5 bg-[#faf6ee] px-3 py-1.5 rounded-lg border border-[#a89276] text-xs text-[#5c4f42]">
+          <span>Total proves:</span>
+          <strong className="font-typewriter text-[#2f5941]">{totalQueries}</strong>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={onToggleSound}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#a89276] bg-[#faf6ee] text-[#5c4f42] hover:text-[#261f19] transition-all cursor-pointer"
-            title={isMuted ? 'Activar so mecànic' : 'Silenciar so'}
-          >
-            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-[#234b7a]" />}
-          </button>
+        <button
+          type="button"
+          onClick={onOpenTutorial}
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-[#a89276] bg-[#faf6ee] px-2.5 font-typewriter text-xs font-bold text-[#332920] hover:border-[#234b7a] cursor-pointer"
+        >
+          <HelpCircle className="h-3.5 w-3.5 text-[#234b7a]" />
+          <span>Com jugar</span>
+        </button>
 
-          <button
-            type="button"
-            onClick={onOpenTutorial}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-[#a89276] bg-[#faf6ee] px-3 font-typewriter text-xs font-bold text-[#332920] hover:border-[#234b7a] transition-all cursor-pointer"
-          >
-            <HelpCircle className="h-4 w-4 text-[#234b7a]" />
-            <span className="hidden sm:inline">Manual</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenHistory}
-            className="flex h-9 items-center gap-1.5 rounded-lg border border-[#a89276] bg-[#faf6ee] px-3 font-typewriter text-xs font-bold text-[#332920] hover:border-[#234b7a] transition-all cursor-pointer"
-          >
-            <History className="h-4 w-4 text-[#b87314]" />
-            <span className="hidden sm:inline">Arxiu Rondes</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onOpenHistory}
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-[#a89276] bg-[#faf6ee] px-2.5 font-typewriter text-xs font-bold text-[#332920] hover:border-[#234b7a] cursor-pointer"
+        >
+          <History className="h-3.5 w-3.5 text-[#b87314]" />
+          <span className="hidden md:inline">Historial</span>
+        </button>
       </div>
 
       {/* Right: Next Round & Solve Code */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            sound.playPunch();
-            onNextRound();
-          }}
-          className="flex items-center gap-2 rounded-lg border-2 border-[#7b6855] bg-[#faf6ee] hover:bg-[#efe5d2] px-4 py-2.5 font-typewriter text-xs font-bold uppercase tracking-wider text-[#261f19] transition-all cursor-pointer shadow-xs"
-        >
-          <span>Següent Ronda</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+      <div className="flex items-center gap-2">
+        {testsThisRound > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              sound.playPunch();
+              onNextRound();
+            }}
+            className="flex items-center gap-1.5 rounded-lg border-2 border-[#234b7a] bg-[#faf6ee] hover:bg-[#d5e2ef] px-3 py-1.5 font-typewriter text-xs font-bold uppercase text-[#1b3b61] transition-all cursor-pointer shadow-2xs"
+          >
+            <span>Següent Ronda (Canviar números)</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        )}
 
         <button
           type="button"
@@ -114,10 +87,10 @@ export const RoundControl: React.FC<RoundControlProps> = ({
             sound.playPunch();
             onOpenGuessModal();
           }}
-          className="flex items-center gap-2 rounded-lg bg-[#2f5941] hover:bg-[#234532] px-5 py-2.5 font-typewriter text-xs font-bold uppercase tracking-wider text-[#faf6ee] shadow-md transition-all cursor-pointer"
+          className="flex items-center gap-1.5 rounded-lg bg-[#2f5941] hover:bg-[#234532] px-4 py-1.5 font-typewriter text-xs font-bold uppercase tracking-wider text-[#faf6ee] shadow-sm transition-all cursor-pointer"
         >
-          <KeyRound className="h-4 w-4" />
-          <span>Desxifrar Codi Secret</span>
+          <KeyRound className="h-3.5 w-3.5" />
+          <span>Resoldre Codi Secret</span>
         </button>
       </div>
     </div>

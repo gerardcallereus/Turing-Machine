@@ -6,6 +6,7 @@ import {
   RoundRecord,
 } from './types/game';
 import { PRESET_PUZZLES, evaluateVerifier } from './lib/solver';
+import { CRITERIA_CARDS } from './lib/criteriaCards';
 import { sound } from './lib/sound';
 import { ProposalBuilder, RoundPhase } from './components/ProposalBuilder';
 import { VerifierCard } from './components/VerifierCard';
@@ -127,7 +128,6 @@ export default function App() {
   };
 
   const handleRunTest = (letter: string) => {
-    if (roundPhase !== 'verify') return;
     if (roundTests.length >= 3) return;
     if (roundTests.some((t) => t.letter === letter)) return;
 
@@ -137,19 +137,49 @@ export default function App() {
     const passed = evaluateVerifier(verifier, proposal);
     sound.playResult(passed);
 
+    setRoundPhase('verify');
     setRoundTests((prev) => [...prev, { letter, passed }]);
     setTotalQueries((prev) => prev + 1);
+
+    // Automatically eliminate contradicted options on this Verifier card when helper is enabled
+    const card = CRITERIA_CARDS[verifier.cardId];
+    if (card && showAutoHelper) {
+      setDeductionSheet((prev) => {
+        const currentMarks = { ...(prev.verifierOptions[letter] || {}) };
+        card.options.forEach((opt, idx) => {
+          const optPassed = opt.evaluate(proposal);
+          if ((passed && !optPassed) || (!passed && optPassed)) {
+            currentMarks[idx] = 'eliminated';
+          }
+        });
+        const remainingIdx = card.options
+          .map((_, idx) => idx)
+          .filter((idx) => currentMarks[idx] !== 'eliminated');
+        if (remainingIdx.length === 1) {
+          currentMarks[remainingIdx[0]] = 'confirmed';
+        }
+        return {
+          ...prev,
+          verifierOptions: {
+            ...prev.verifierOptions,
+            [letter]: currentMarks,
+          },
+        };
+      });
+    }
   };
 
   const handleNextRound = () => {
-    setHistory((prev) => [
-      ...prev,
-      {
-        roundNumber: currentRound,
-        proposal: { ...proposal },
-        tests: [...roundTests],
-      },
-    ]);
+    if (roundTests.length > 0) {
+      setHistory((prev) => [
+        ...prev,
+        {
+          roundNumber: currentRound,
+          proposal: { ...proposal },
+          tests: [...roundTests],
+        },
+      ]);
+    }
 
     setCurrentRound((prev) => prev + 1);
     setRoundTests([]);
@@ -173,31 +203,23 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-[#234b7a] selection:text-[#faf6ee]">
-      {/* Archival WWII Watercolor Top Header */}
-      <header className="border-b-2 border-[#a89276] bg-[#efe5d2]/95 sticky top-0 z-40 backdrop-blur-xs shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+      {/* Compact Archival Top Header (Chromebook-friendly height) */}
+      <header className="border-b-2 border-[#a89276] bg-[#efe5d2]/95 sticky top-0 z-40 backdrop-blur-xs shadow-2xs">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2">
           {/* Logo & Historical Identity */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#261f19] text-[#faf6ee] border border-[#7b6855] shadow-xs">
-              <Feather className="h-5 w-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#261f19] text-[#faf6ee] border border-[#7b6855] shadow-2xs">
+              <Feather className="h-4 w-4" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-bold tracking-wide text-[#261f19]">
-                  Bletchley Park 1941 &bull; Màquina de Turing
-                </h1>
-                <span className="hidden md:inline-block font-typewriter text-[10px] uppercase bg-[#faf6ee] px-2 py-0.5 rounded text-[#992d25] border border-[#992d25] font-bold">
-                  Quadern Històric
-                </span>
-              </div>
-              <p className="text-xs text-[#5c4f42] hidden sm:block italic">
-                Itinerari seqüencial: 1. Història i Test &rarr; 2. Tutorial d'Operador &rarr; 3. Tauler de Joc
-              </p>
+              <h1 className="text-base sm:text-lg font-bold tracking-wide text-[#261f19] leading-tight">
+                Bletchley Park 1941 &bull; Màquina de Turing
+              </h1>
             </div>
           </div>
 
           {/* Strictly Sequential 3-Phase Navigation Bar */}
-          <nav className="flex items-center gap-1.5 bg-[#e4d7c0] p-1 rounded-xl border border-[#a89276]">
+          <nav className="flex items-center gap-1 bg-[#e4d7c0] p-1 rounded-xl border border-[#a89276]">
             {/* Phase 1: History + Quiz */}
             <button
               type="button"
@@ -205,9 +227,9 @@ export default function App() {
                 sound.playPencilMark();
                 setCurrentView('education');
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-typewriter text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-typewriter text-xs font-bold transition-all cursor-pointer ${
                 currentView === 'education'
-                  ? 'bg-[#234b7a] text-[#faf6ee] shadow-xs'
+                  ? 'bg-[#234b7a] text-[#faf6ee] shadow-2xs'
                   : 'text-[#332920] hover:bg-[#efe5d2]'
               }`}
             >
@@ -219,7 +241,7 @@ export default function App() {
               <span>1. Història i Test</span>
             </button>
 
-            {/* Phase 2: Step-by-Step Guided Tutorial (Locked until Phase 1 Quiz passed) */}
+            {/* Phase 2: Step-by-Step Guided Tutorial */}
             <button
               type="button"
               disabled={!phase1Completed}
@@ -231,11 +253,11 @@ export default function App() {
               title={
                 phase1Completed
                   ? 'Accedir al Tutorial Guiat Pas a Pas'
-                  : 'Bloquejat: Supera primer el Test de Lectura del Dossier Històric (Fase 1)'
+                  : 'Bloquejat: Supera primer el Test de Lectura (Fase 1)'
               }
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-typewriter text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-typewriter text-xs font-bold transition-all ${
                 currentView === 'guided'
-                  ? 'bg-[#234b7a] text-[#faf6ee] shadow-xs cursor-pointer'
+                  ? 'bg-[#234b7a] text-[#faf6ee] shadow-2xs cursor-pointer'
                   : phase1Completed
                   ? 'text-[#332920] hover:bg-[#efe5d2] cursor-pointer'
                   : 'text-[#8c7b68] opacity-60 cursor-not-allowed'
@@ -248,10 +270,10 @@ export default function App() {
               ) : (
                 <Compass className="h-3.5 w-3.5" />
               )}
-              <span>2. Tutorial Guiat</span>
+              <span>2. Com Jugar (Exemple)</span>
             </button>
 
-            {/* Phase 3: Full Board Game (Locked until Phase 2 Guided Tutorial finished) */}
+            {/* Phase 3: Full Board Game */}
             <button
               type="button"
               disabled={!phase2Completed}
@@ -262,12 +284,12 @@ export default function App() {
               }}
               title={
                 phase2Completed
-                  ? 'Accedir al Tauler de Joc de la Màquina de Turing'
-                  : 'Bloquejat: Completa primer el Tutorial Guiat Pas a Pas (Fase 2)'
+                  ? 'Accedir al Tauler de Joc'
+                  : 'Bloquejat: Completa primer el Tutorial (Fase 2)'
               }
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-typewriter text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-typewriter text-xs font-bold transition-all ${
                 currentView === 'game'
-                  ? 'bg-[#2f5941] text-[#faf6ee] shadow-xs cursor-pointer'
+                  ? 'bg-[#2f5941] text-[#faf6ee] shadow-2xs cursor-pointer'
                   : phase2Completed
                   ? 'text-[#332920] hover:bg-[#efe5d2] cursor-pointer'
                   : 'text-[#8c7b68] opacity-60 cursor-not-allowed'
@@ -278,25 +300,25 @@ export default function App() {
               ) : (
                 <Gamepad2 className="h-3.5 w-3.5" />
               )}
-              <span>3. Jugar al Tauler</span>
+              <span>3. Jugar</span>
             </button>
           </nav>
 
           {/* Right Quick Tools */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {currentView === 'game' && (
               <button
                 type="button"
                 onClick={() => setIsPuzzleSelectorOpen(true)}
-                className="flex items-center gap-2 rounded-lg border border-[#8c765c] bg-[#faf6ee] px-3 py-1.5 font-typewriter text-xs font-bold text-[#261f19] hover:border-[#234b7a] transition-all cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 rounded-lg border border-[#8c765c] bg-[#faf6ee] px-2.5 py-1 font-typewriter text-xs font-bold text-[#261f19] hover:border-[#234b7a] transition-all cursor-pointer shadow-2xs"
               >
                 <FolderOpen className="h-3.5 w-3.5 text-[#234b7a]" />
-                <span className="max-w-[130px] sm:max-w-[180px] truncate">{puzzle.title}</span>
+                <span className="max-w-[130px] sm:max-w-[170px] truncate">{puzzle.title}</span>
               </button>
             )}
 
             {/* Agent / Player Badge in Header */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-[#a89276] bg-[#faf6ee] px-2.5 py-1 font-typewriter text-xs text-[#5c4f42]">
+            <div className="flex items-center gap-1.5 rounded-lg border border-[#a89276] bg-[#faf6ee] px-2 py-1 font-typewriter text-xs text-[#5c4f42]">
               <User className="h-3.5 w-3.5 text-[#234b7a]" />
               <input
                 type="text"
@@ -305,7 +327,7 @@ export default function App() {
                 placeholder="Agent..."
                 title="Nom de l'agent (escriu 'teacher' per activar el mode professor)"
                 aria-label="Nom de l'agent"
-                className="bg-transparent border-none outline-none text-xs font-typewriter font-semibold text-[#261f19] w-16 sm:w-24 placeholder:text-[#a89276]"
+                className="bg-transparent border-none outline-none text-xs font-typewriter font-semibold text-[#261f19] w-16 sm:w-20 placeholder:text-[#a89276]"
               />
               {isTeacherMode && (
                 <span className="rounded bg-[#b87314] px-1.5 py-0.5 font-typewriter text-[10px] font-bold text-[#faf6ee] uppercase tracking-wider">
@@ -317,30 +339,30 @@ export default function App() {
             <button
               type="button"
               onClick={handleToggleSound}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#a89276] bg-[#faf6ee] text-[#5c4f42] hover:text-[#261f19] transition-all cursor-pointer"
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#a89276] bg-[#faf6ee] text-[#5c4f42] hover:text-[#261f19] transition-all cursor-pointer"
               title={isMuted ? 'Activar so' : 'Silenciar so'}
             >
               {isMuted ? (
-                <VolumeX className="h-4 w-4" />
+                <VolumeX className="h-3.5 w-3.5" />
               ) : (
-                <Volume2 className="h-4 w-4 text-[#234b7a]" />
+                <Volume2 className="h-3.5 w-3.5 text-[#234b7a]" />
               )}
             </button>
 
             <button
               type="button"
               onClick={() => setIsTutorialOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#a89276] bg-[#faf6ee] text-[#5c4f42] hover:text-[#261f19] transition-all cursor-pointer"
-              title="Manual de Camp"
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#a89276] bg-[#faf6ee] text-[#5c4f42] hover:text-[#261f19] transition-all cursor-pointer"
+              title="Com es juga"
             >
-              <HelpCircle className="h-4 w-4 text-[#234b7a]" />
+              <HelpCircle className="h-3.5 w-3.5 text-[#234b7a]" />
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-5 py-3 sm:py-4">
         {/* PHASE 1: Historical WWII & Alan Turing Dossier + Mandatory Reading Test */}
         {currentView === 'education' && (
           <EducationalUnit
@@ -369,9 +391,9 @@ export default function App() {
           />
         )}
 
-        {/* PHASE 3: Full Turing Machine Physical Board Game */}
+        {/* PHASE 3: Chromebook-Optimized 2-Column Game Dashboard */}
         {currentView === 'game' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-3 animate-in fade-in duration-300">
             <RoundControl
               currentRound={currentRound}
               testsThisRound={roundTests.length}
@@ -386,153 +408,143 @@ export default function App() {
               onToggleSound={handleToggleSound}
             />
 
-            {/* Step 1 & 2 of Round: Perforated Punch Card Selection + 3-Card Superposition */}
-            <section>
-              <ProposalBuilder
-                proposal={proposal}
-                onChange={(newCode) => {
-                  if (roundPhase !== 'select' || roundTests.length > 0) return;
-                  setProposal(newCode);
-                }}
-                roundPhase={roundPhase}
-                onChangeRoundPhase={setRoundPhase}
-                currentRound={currentRound}
-                testsLeftInRound={testsRemaining}
-                totalRoundTests={roundTests.length}
-                lastTestedVerifier={lastTestedVerifier}
-                onNextRound={handleNextRound}
-              />
-            </section>
+            {/* Side-by-Side Dashboard: Left = Selector + Notepad | Right = Verifiers */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+              {/* LEFT COLUMN (4 cols): Pas 1 (Tria el Codi) + Pas 3 (Quadern de Pistes) */}
+              <div className="lg:col-span-4 space-y-3">
+                <ProposalBuilder
+                  proposal={proposal}
+                  onChange={(newCode) => {
+                    if (roundTests.length > 0) return;
+                    setProposal(newCode);
+                  }}
+                  roundPhase={roundPhase}
+                  onChangeRoundPhase={setRoundPhase}
+                  currentRound={currentRound}
+                  testsLeftInRound={testsRemaining}
+                  totalRoundTests={roundTests.length}
+                  lastTestedVerifier={lastTestedVerifier}
+                  onNextRound={handleNextRound}
+                />
 
-            {/* Step 3 of Round: Central Machine Console & Verifier Cards (A..F) */}
-            <section
-              id="verifiers-station"
-              className={`space-y-4 transition-all scroll-mt-20 ${
-                roundPhase === 'verify' ? 'opacity-100' : 'opacity-75'
-              }`}
-            >
-              <div className="wc-paper-aged rounded-xl border-2 border-[#8c765c] px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <span className="font-typewriter text-[10px] uppercase tracking-widest text-[#2f5941] font-bold">
-                    PAS 3 DE LA RONDA {currentRound} &bull; VERIFICACIÓ DEL SANDVITX DE TARGETES
-                  </span>
-                  <h2 className="text-xl sm:text-2xl font-bold text-[#261f19]">
-                    Verificadors Mecànics ({puzzle.verifiers.length} Ranures Actives)
-                  </h2>
+                <DeductionNotepad
+                  puzzle={puzzle}
+                  state={deductionSheet}
+                  onChange={setDeductionSheet}
+                  onReset={() => setDeductionSheet(createEmptyDeductionState())}
+                  showAutoHelper={showAutoHelper}
+                  onToggleAutoHelper={() => setShowAutoHelper((prev) => !prev)}
+                  history={history}
+                  currentRound={currentRound}
+                  currentProposal={proposal}
+                  currentRoundTests={roundTests}
+                  onSelectProposal={(code) => {
+                    if (roundTests.length === 0) {
+                      setProposal(code);
+                    } else {
+                      setHistory((prev) => [
+                        ...prev,
+                        {
+                          roundNumber: currentRound,
+                          proposal: { ...proposal },
+                          tests: [...roundTests],
+                        },
+                      ]);
+                      setCurrentRound((prev) => prev + 1);
+                      setRoundTests([]);
+                      setProposal(code);
+                      setRoundPhase('select');
+                    }
+                  }}
+                  onOpenGuessModal={() => setIsGuessModalOpen(true)}
+                />
+              </div>
+
+              {/* RIGHT COLUMN (8 cols): Pas 2 (Verificadors de Pistes A..D/F) */}
+              <div className="lg:col-span-8 space-y-3" id="verifiers-station">
+                <div className="wc-paper-aged rounded-xl border-2 border-[#8c765c] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="font-typewriter text-[10px] uppercase tracking-wider text-[#2f5941] font-bold block">
+                      PAS 2 DE LA RONDA {currentRound} &bull; MÀXIM 3 PROVES PER RONDA
+                    </span>
+                    <h2 className="text-base sm:text-lg font-bold text-[#261f19]">
+                      Verificadors de Pistes ({testsRemaining} proves disponibles en aquesta ronda)
+                    </h2>
+                  </div>
+
+                  {/* Slot Status Stamps (A..D/F) */}
+                  <div className="flex items-center gap-1.5">
+                    {puzzle.verifiers.map((v) => {
+                      const tested = roundTests.find((t) => t.letter === v.letter);
+                      return (
+                        <div
+                          key={v.letter}
+                          className={`flex items-center gap-1 rounded-lg px-2.5 py-1 font-typewriter text-xs font-bold border ${
+                            tested
+                              ? tested.passed
+                                ? 'wc-wash-olive border-[#2f5941] text-[#1e402f]'
+                                : 'wc-wash-crimson border-[#992d25] text-[#781f19]'
+                              : 'bg-[#faf6ee] border-[#a89276] text-[#5c4f42]'
+                          }`}
+                        >
+                          <span>{v.letter}</span>
+                          <span>{tested ? (tested.passed ? '✔' : '✖') : '·'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Slot Status Stamps (A..F) */}
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {puzzle.verifiers.map((v) => {
-                    const tested = roundTests.find((t) => t.letter === v.letter);
+                    const testInRound = roundTests.find((t) => t.letter === v.letter);
                     return (
-                      <div
+                      <VerifierCard
                         key={v.letter}
-                        className={`flex items-center gap-1.5 rounded-lg px-3 py-1 font-typewriter text-xs font-bold border ${
-                          tested
-                            ? tested.passed
-                              ? 'wc-wash-olive border-[#2f5941] text-[#1e402f]'
-                              : 'wc-wash-crimson border-[#992d25] text-[#781f19]'
-                            : 'bg-[#faf6ee] border-[#a89276] text-[#5c4f42]'
-                        }`}
-                      >
-                        <span>{v.letter}</span>
-                        <span>{tested ? (tested.passed ? '✔' : '✖') : '·'}</span>
-                      </div>
+                        verifier={v}
+                        proposal={proposal}
+                        isTestedThisRound={Boolean(testInRound)}
+                        roundTestResult={testInRound ? testInRound.passed : null}
+                        testsRemaining={testsRemaining}
+                        isRoundReadyForVerify={true}
+                        onRunTest={handleRunTest}
+                        optionMarks={deductionSheet.verifierOptions[v.letter] || {}}
+                        onToggleOptionMark={(optIdx) => {
+                          const currentMarks = deductionSheet.verifierOptions[v.letter] || {};
+                          const curStatus = currentMarks[optIdx] || 'none';
+                          const nextStatus =
+                            curStatus === 'none'
+                              ? 'eliminated'
+                              : curStatus === 'eliminated'
+                              ? 'confirmed'
+                              : 'none';
+                          setDeductionSheet((prev) => ({
+                            ...prev,
+                            verifierOptions: {
+                              ...prev.verifierOptions,
+                              [v.letter]: {
+                                ...currentMarks,
+                                [optIdx]: nextStatus,
+                              },
+                            },
+                          }));
+                        }}
+                        showAutoHelper={showAutoHelper}
+                        pastHistory={history}
+                      />
                     );
                   })}
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {puzzle.verifiers.map((v) => {
-                  const testInRound = roundTests.find((t) => t.letter === v.letter);
-                  return (
-                    <VerifierCard
-                      key={v.letter}
-                      verifier={v}
-                      proposal={proposal}
-                      isTestedThisRound={Boolean(testInRound)}
-                      roundTestResult={testInRound ? testInRound.passed : null}
-                      testsRemaining={testsRemaining}
-                      isRoundReadyForVerify={roundPhase === 'verify'}
-                      onRunTest={handleRunTest}
-                      optionMarks={deductionSheet.verifierOptions[v.letter] || {}}
-                      onToggleOptionMark={(optIdx) => {
-                        const currentMarks = deductionSheet.verifierOptions[v.letter] || {};
-                        const curStatus = currentMarks[optIdx] || 'none';
-                        const nextStatus =
-                          curStatus === 'none'
-                            ? 'eliminated'
-                            : curStatus === 'eliminated'
-                            ? 'confirmed'
-                            : curStatus === 'confirmed'
-                            ? 'unsure'
-                            : 'none';
-                        setDeductionSheet((prev) => ({
-                          ...prev,
-                          verifierOptions: {
-                            ...prev.verifierOptions,
-                            [v.letter]: {
-                              ...currentMarks,
-                              [optIdx]: nextStatus,
-                            },
-                          },
-                        }));
-                      }}
-                      showAutoHelper={showAutoHelper}
-                      pastHistory={history}
-                    />
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Step 4: Official Deduction Sheet */}
-            <section>
-              <DeductionNotepad
-                puzzle={puzzle}
-                state={deductionSheet}
-                onChange={setDeductionSheet}
-                onReset={() => setDeductionSheet(createEmptyDeductionState())}
-                showAutoHelper={showAutoHelper}
-                onToggleAutoHelper={() => setShowAutoHelper((prev) => !prev)}
-                history={history}
-                currentRound={currentRound}
-                currentProposal={proposal}
-                currentRoundTests={roundTests}
-                onSelectProposal={(code) => {
-                  if (roundPhase === 'select' && roundTests.length === 0) {
-                    setProposal(code);
-                  } else {
-                    setHistory((prev) => [
-                      ...prev,
-                      {
-                        roundNumber: currentRound,
-                        proposal: { ...proposal },
-                        tests: [...roundTests],
-                      },
-                    ]);
-                    setCurrentRound((prev) => prev + 1);
-                    setRoundTests([]);
-                    setProposal(code);
-                    setRoundPhase('select');
-                  }
-                }}
-                onOpenGuessModal={() => setIsGuessModalOpen(true)}
-              />
-            </section>
+            </div>
           </div>
         )}
       </main>
 
-      {/* Vintage Archival Footer */}
-      <footer className="border-t-2 border-[#bda98e] bg-[#e6decb] py-5 text-center text-xs text-[#463a2e]">
-        <p className="font-display text-sm font-bold">
-          Quadern Històric en Aquarel·la: <strong>Alan Turing, Bletchley Park (1939–1945)</strong> i el joc de taula <strong>Turing Machine</strong> (Fabien Gridel i Yoann Levet).
-        </p>
-        <p className="mt-1 font-typewriter text-[11px] text-[#5c4f42]">
-          Itinerari pedagògic seqüencial &bull; Dossier Històric + Test de Verificació &rarr; Tutorial Guiat &rarr; Simulador Físic de Targetes Perforades.
+      {/* Compact Vintage Archival Footer */}
+      <footer className="border-t border-[#bda98e] bg-[#e6decb] py-3 text-center text-xs text-[#463a2e]">
+        <p className="font-display text-xs sm:text-sm">
+          Quadern Històric: <strong>Alan Turing, Bletchley Park (1939–1945)</strong> i el joc de deducció <strong>Turing Machine</strong>.
         </p>
       </footer>
 
