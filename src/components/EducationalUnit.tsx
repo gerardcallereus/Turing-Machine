@@ -303,7 +303,7 @@ export const EducationalUnit: React.FC<EducationalUnitProps> = ({
             <div className="lg:col-span-5">
               <div className="wc-illustration-frame rounded-lg overflow-hidden">
                 <img
-                  src="/images/enigma-machine.png"
+                  src={`${import.meta.env.BASE_URL}images/enigma-machine.png`}
                   alt="Il·lustració en aquarel·la de la màquina Enigma"
                   className="w-full h-56 sm:h-64 object-cover rounded"
                   onError={(e) => {
@@ -356,7 +356,7 @@ export const EducationalUnit: React.FC<EducationalUnitProps> = ({
             <div className="lg:col-span-5">
               <div className="wc-illustration-frame rounded-lg overflow-hidden">
                 <img
-                  src="/images/ww2-bletchley.png"
+                  src={`${import.meta.env.BASE_URL}images/ww2-bletchley.png`}
                   alt="Il·lustració en aquarel·la de Bletchley Park i la Caseta 8"
                   className="w-full h-56 sm:h-64 object-cover rounded"
                   onError={(e) => {
@@ -461,7 +461,7 @@ export const EducationalUnit: React.FC<EducationalUnitProps> = ({
             <div className="lg:col-span-5">
               <div className="wc-illustration-frame rounded-lg overflow-hidden">
                 <img
-                  src="/images/turing-bombe.png"
+                  src={`${import.meta.env.BASE_URL}images/turing-bombe.png`}
                   alt="Il·lustració en aquarel·la de la màquina Bombe d'Alan Turing"
                   className="w-full h-56 sm:h-64 object-cover rounded"
                   onError={(e) => {
